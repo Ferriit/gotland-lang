@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdio>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include <cstring>
@@ -25,6 +26,12 @@ struct token {
 
     tokentype type;
     string text;
+};
+
+struct ASTNode {
+    enum class Type { Number, Variable, BinaryOp, Assignment } type;
+    string value;
+    vector<ASTNode*> children;
 };
 
 
@@ -278,6 +285,138 @@ vector<token> tokenizer(vector<string> splits) {
     return tokens;
 }
 
+
+bool lexer(vector<token> tokens) {
+    string block = "";
+
+    int scope = 0;
+    
+    bool failed = false;
+
+    for (int i = 0; i < tokens.size(); i++) {
+        token current = tokens[i];
+        tokentype type = current.type;
+    
+        token next = token();
+        if (i < (tokens.size() - 1)) {
+            next = tokens[i + 1];
+        }
+
+        if (type == tokentype::Block) {
+            block = current.text;
+        }
+
+        else if (type == tokentype::Keyword) {
+            if (current.text == "begin") {              // Begin and end can only be in [impl]
+                scope++;
+                if (block != "[impl]") {
+                    std::cout << "Block Error on line " << current.line << 
+                        ":\n'begin' is in the wrong block, should be in [impl]\n\n";
+                
+                    failed = true;
+                }
+            }
+
+            else if (current.text == "end") {
+                scope--;
+
+                if (scope < 0) {
+                    std::cout << "Scope Error on line " << current.line << 
+                        ":\nScope is invalid\n\n";
+                    failed = true;
+                }
+
+                if (block != "[impl]") {
+                    std::cout << "Block Error on line " << current.line << 
+                        ":\n'end' is in the wrong block, should be in [impl]\n\n";
+                
+                    failed = true;
+                }
+            }
+
+
+            else if (current.text == "imp") {
+                if (next.type != tokentype::Keyword ||      // Next keyword must be glb or loc 
+                        (next.text != "loc" && next.text != "glb")) {
+                    std::cout << "Syntax Error on line" << current.line <<
+                        ":\nUnknown token '" << next.text << "'\n\n";
+
+                    failed = true;
+                }
+
+                if (block != "[using]") {
+                    std::cout << "Block Error on line " << current.line << 
+                        ":\n'imp' is in the wrong block, should be in [using]\n\n";
+                
+                    failed = true;
+                }
+            }
+
+            else if (current.text == "var") {
+                if (next.type != tokentype::Identifier) {
+                    std::cout << "Syntax Error on line " << current.line <<
+                        ":\nExpected variable name, got '" << next.text << "'\n\n";
+                    failed = true;
+                }
+                else if (block == "[using]") {
+                    std::cout << "Block Error on line " << current.line <<
+                        ":\n'var' is in the wrong block, should be in [data] or [impl]\n\n";
+                    failed = true;
+                }
+            }   
+            
+            else if (current.text == "fn") {
+                if (next.type != tokentype::Identifier) {
+                    std::cout << "Syntax Error on line " << current.line <<
+                        ":\nExpected function name, got '" << next.text << "'\n\n";
+                    failed = true;
+                }
+                else if (block != "[impl]") {
+                    std::cout << "Block Error on line " << current.line <<
+                        ":\n'fn' is in the wrong block, should be in [impl]\n\n";
+                    failed = true;
+                }
+            }
+
+            else if (current.text == "glb") {
+                if (next.type != tokentype::Identifier) {
+                    std::cout << "Syntax Error on line" << current.line <<
+                        ":\nExpected identifier, got '" << next.text << "'\n\n";
+                        failed = true;
+                }
+                else if (block == "[data]") {
+                    std::cout << "Block Error on line " << current.line <<
+                        ":\n'glb' is in the wrong block, should be in [using] or [impl]\n\n";
+                    failed = true;
+                }
+            }
+            else if (current.text == "loc") {
+                if (next.type != tokentype::Identifier) {
+                    std::cout << "Syntax Error on line" << current.line <<
+                        ":\nExpected identifier, got '" << next.text << "'\n\n";
+                        failed = true;
+                }
+                else if (block != "[using]") {
+                    std::cout << "Block Error on line " << current.line <<
+                        ":\n'loc' is in the wrong block, should be in [using]\n\n";
+                    failed = true;
+                }
+            }
+        }
+    }
+    if (scope != 0) {
+        std::cout << "Scope Error on line " << tokens[tokens.size() - 1].line <<
+            ":\nScope is invalid\n\n";
+    }
+
+    if (failed) {
+        std::cout << "Compilation failed." << std::endl;
+        return false;
+    }
+    return true;
+}
+
+
 string tokentypetostring(tokentype type) {
     switch (type) {
         case tokentype::Identifier: return "Identifier";
@@ -306,19 +445,16 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // Remove Comments (Removecomments) -> Format (Splitdata) -> Generate Tokens (Tokenizer) -> Analyze Syntax (Lexer) -> Generate Assembly (Parser)
+
     string buf = removecomments(readfile(argv[1]));
-    
-    //std::cout << buf << std::endl;
 
     vector<string> splits = splitdata(buf);
 
-    //for (string s: splits) {
-    //    std::cout << s << "\n";
-    //}
-    //std::cout << std::endl;
+    vector<token> tokens = tokenizer(splits);
 
-    printtokens(tokenizer(splits));
+    printtokens(tokens);
 
-    return 0;
+    return lexer(tokens);
 }
 

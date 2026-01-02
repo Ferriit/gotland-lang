@@ -143,7 +143,7 @@ Block Error on line [LINE]:
 - Scope Error:
 ```
 Scope Error on line [LINE]:
-Expected '[BEGIN_OR_END]', got [NEXT_TOKEN]
+Scope is invalid
 ```
 
 * If an error occurred, the compiler must also print `Compilation failed.` after all of the errors.
