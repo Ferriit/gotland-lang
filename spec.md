@@ -63,7 +63,7 @@ false       FALSE               A value of False, same as 0x00.
 [data]
 // These are global variables
 var num1 = 10
-var fnum2 10.3f     // Float
+var fnum2 = 10.3f     // Float
 var c = 'a'         // Same as '61'
 
 var parray[128]     // An array that's 128 indicies long

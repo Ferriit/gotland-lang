@@ -1,0 +1,12 @@
+[using]
+imp glb io
+
+[data]
+var pmsg = "Hello, World!"
+
+[impl]
+
+fn main begin
+    put 0 pmsg   // Put pmgs on the screen (0)
+    ret 0
+end
