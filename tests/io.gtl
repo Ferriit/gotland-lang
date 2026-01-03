@@ -1,0 +1,26 @@
+[impl]
+
+glb fn puts ifile data begin
+    // ifile in RCX and data in RDX
+    var ifd = ifile + 1
+
+    var i = 0
+    var length = 0
+
+    loop:
+    length += 1
+    i += 1
+
+    if data[i] != 0 begin
+        jmp loop
+    end
+
+    asm mov rax, 1
+    asm mov rdi, ifd        // Move the value from wherever idf is stored to rdi
+    asm mov rsi, data       // Move the value from wherever data is stored to rsi
+    asm mov rdx, length     // Move the value from length to rdi
+    asm syscall
+
+    ret
+end
+

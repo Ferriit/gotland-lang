@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cstdio>
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include <cstring>
@@ -28,10 +27,39 @@ struct token {
     string text;
 };
 
+
+enum class ASTNodeType {
+    Program,
+    Block,
+    VarDecl,
+    Function,
+    Return,
+    Identifier,
+    Constant,
+    BinaryExpr
+};
+
+
 struct ASTNode {
-    enum class Type { Number, Variable, BinaryOp, Assignment } type;
-    string value;
+    ASTNodeType type;
     vector<ASTNode*> children;
+    token tok;   // token that produced this node (for errors)
+};
+
+
+struct Parser {
+    const vector<token>& tokens;
+    size_t pos = 0;
+
+    token peek() { return tokens[pos]; }
+    token advance() { return tokens[pos++]; }
+    bool match(tokentype t);
+};
+
+
+struct coderesult {
+    bool status;
+    string code;
 };
 
 
@@ -338,8 +366,8 @@ bool lexer(vector<token> tokens) {
             else if (current.text == "imp") {
                 if (next.type != tokentype::Keyword ||      // Next keyword must be glb or loc 
                         (next.text != "loc" && next.text != "glb")) {
-                    std::cout << "Syntax Error on line" << current.line <<
-                        ":\nUnknown token '" << next.text << "'\n\n";
+                    std::cout << "Syntax Error on line " << current.line <<
+                        ":\nUnknown token '" << next.text << "'. Expected 'loc' or 'glb'\n\n";
 
                     failed = true;
                 }
@@ -417,6 +445,31 @@ bool lexer(vector<token> tokens) {
 }
 
 
+ASTNode parser(vector<token> tokens) {
+    Parser parsedata = {.tokens=tokens};
+
+    
+}
+
+
+coderesult codegen(string data) {
+    string buf = removecomments(data);
+
+    vector<string> splits = splitdata(buf);
+
+    vector<token> tokens = tokenizer(splits);
+
+    bool lexresult = lexer(tokens);
+
+    if (!lexresult) {
+        return coderesult({.status=false, .code=""});
+    }
+
+    ASTNode tree = parser(tokens);
+    
+}
+
+
 string tokentypetostring(tokentype type) {
     switch (type) {
         case tokentype::Identifier: return "Identifier";
@@ -445,7 +498,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Remove Comments (Removecomments) -> Format (Splitdata) -> Generate Tokens (Tokenizer) -> Analyze Syntax (Lexer) -> Generate Assembly (Parser)
+    // Remove Comments (Removecomments) -> Format (Splitdata) -> Generate Tokens (Tokenizer) -> Analyze Syntax (Lexer) -> Generate AST (Parser) -> Codegen
 
     string buf = removecomments(readfile(argv[1]));
 

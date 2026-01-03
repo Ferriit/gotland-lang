@@ -19,6 +19,8 @@ jmp         JUMP                Jumps to a label.
 
 true        TRUE                A value of True, same as 0x01.
 false       FALSE               A value of False, same as 0x00.
+
+asm         ASSEMBLY            Inserts an assembly instruction.
 ```
 
 ## Blocks:
@@ -148,3 +150,6 @@ Scope is invalid
 
 * If an error occurred, the compiler must also print `Compilation failed.` after all of the errors.
 * When an error is encountered, compilation should continue until a full .asm file is generated. Then it can print all errors and stop compilation.
+
+## Mics:
+- Operand #1 should be stored in RAX and Operand #2 should be stored in RBX. Functions should take arguments on the stack in the order they appear but later switch to registers in the order RCX, RDX, R8 etc. etc. in the order they appear in the definition. Return values should be stored in RAX.
