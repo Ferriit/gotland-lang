@@ -42,8 +42,8 @@ enum class ASTNodeType {
 
 struct ASTNode {
     ASTNodeType type;
-    vector<ASTNode*> children;
-    token tok;   // token that produced this node (for errors)
+    vector<ASTNode> children;
+    token tok;
 };
 
 
@@ -448,7 +448,35 @@ bool lexer(vector<token> tokens) {
 ASTNode parser(vector<token> tokens) {
     Parser parsedata = {.tokens=tokens};
 
-    
+    ASTNode tree = ASTNode({.type=ASTNodeType::Program});
+
+    vector<size_t> path;   // The indicies in the children vector necessary to get to the current scope
+
+    for (int i = 0; tokens[i].type != tokentype::Endoffile; i++) {
+        token tok = tokens[i];
+        token next = tokens[i + 1];
+        
+        if (tok.type == tokentype::Block) {
+            if (tok.text == "[using]" || tok.text == "[data]" || tok.text == "[impl]") {
+                tree.children.push_back({.type=ASTNodeType::Block, .tok=tok});
+
+                path = {tree.children.size()};
+            }
+        }
+        
+        else if (tok.type == tokentype::Keyword) {
+            if (tok.text == "imp") {
+                // Lexer has already checked that it's in the right block and that it's followed by glb or loc
+                if (next.type == tokentype::Keyword && next.text == "loc") {
+                    // TODO: Implement importing and parsing that data separately
+                }
+            }
+
+            // TODO: Implement every keyword
+        }
+    }
+
+    return tree;
 }
 
 
@@ -466,7 +494,6 @@ coderesult codegen(string data) {
     }
 
     ASTNode tree = parser(tokens);
-    
 }
 
 
